@@ -1,0 +1,143 @@
+<html>
+<head>
+<title></title>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+	function update_marker (val) {
+		val = (val & 0xffff);
+		$('#marker_value').val(('0000' + val.toString(16).toUpperCase()).substr(-4));
+		for (i = 0; i < 16; i++) {
+			$('.bit' + i).toggleClass('marker_on', (val & (1 << i)) != 0);
+		}				
+		// decode marker
+		var bit = new Array(16);
+		for (i = 0; i < 16; i++) {
+			bit[i] = (val >> i) & 1;
+		}
+		var code2 =                                   (bit[ 5] << 1) | bit[ 1]; 
+		var code1 = (bit[ 7] << 3) | (bit[14] << 2) | (bit[ 2] << 1) | bit[11]; 
+		var code0 = (bit[13] << 3) | (bit[ 3] << 2) | (bit[15] << 1) | bit[12];
+		var code = (code2 << 8) | (code1 << 4) | code0;
+		// check
+		var pbit = new Array(10);
+		for (i = 0; i < 10; i++) {
+			pbit[i] = (code >> i) & 1;
+		}
+		var poke_no = code + 1 - 494;
+		var valid = ((pbit[0] ^ pbit[1] ^ pbit[2] ^ 1) == bit[0])
+		         && ((pbit[3] ^ pbit[4] ^ pbit[5] ^ 1) == bit[4])
+				 && ((pbit[6] ^ pbit[7] ^ pbit[8] ^ 1) == bit[8])
+				 && (bit[5] == bit[10])
+				 && (bit[6] == 0)
+				 && (bit[9] == 1)
+				 && (poke_no >= 0);
+		$('.input_panel').toggleClass('marker_invalid', !valid);
+		if (valid) {
+			$('#poke_value').val(poke_no);
+		}
+	}
+	function flip_marker (bit) {
+		var num = parseInt($('#marker_value').val(), 16);
+		num ^= (1 << bit);
+		update_marker(num);
+	}
+	function update_poke (val) {
+		$('#poke_value').val(val);
+		var poke_no = (val + 494 - 1) & 0x3ff;
+		// encode marker
+		var bit = new Array(10);
+		for (i = 0; i < 10; i++) {
+			bit[i] = (poke_no >> i) & 1;
+		}
+		var code0 = (bit[0] ^ bit[1] ^ bit[2] ^ 1) | (bit[8] << 1) | (bit[5] << 2) | (bit[2] << 3);
+		var code1 = (bit[3] ^ bit[4] ^ bit[5] ^ 1) | (bit[9] << 1) | (0      << 2) | (bit[7] << 3);
+		var code2 = (bit[6] ^ bit[7] ^ bit[8] ^ 1) | (1      << 1) | (bit[9] << 2) | (bit[4] << 3);
+		var code3 = bit[0]                         | (bit[3] << 1) | (bit[6] << 2) | (bit[1] << 3);
+		var code = (code3 << 12) | (code2 << 8) | (code1 << 4) | code0;
+		update_marker(code); 
+	}
+	// setup marker pixels
+	for (var i = 0; i < 16; i++) {
+		px = $('<div class="marker_pixel"></div>');
+		px.addClass('bit' + i);
+		(function (v) {
+			px.click(function () {
+				flip_marker(v);
+			});
+		})(i);
+		$('.marker_outline').append(px);
+	}
+	$('#marker_update').click(function () {
+		var num = parseInt($('#marker_value').val(), 16);
+		update_marker(num);
+	});
+	$('#marker_add').click(function () {
+		var num = parseInt($('#marker_value').val(), 16) + 1;
+		update_marker(num);
+	});
+	$('#marker_sub').click(function () {
+		var num = parseInt($('#marker_value').val(), 16) - 1;
+		update_marker(num);
+	});
+	$('#poke_update').click(function () {
+		var num = parseInt($('#poke_value').val());
+		update_poke(num);
+	});
+	$('#poke_add').click(function () {
+		var num = parseInt($('#poke_value').val()) + 1;
+		update_poke(num);
+	});
+	$('#poke_sub').click(function () {
+		var num = parseInt($('#poke_value').val()) - 1;
+		update_poke(num);
+	});
+	$('#poke_add16').click(function () {
+		var num = parseInt($('#poke_value').val()) + 16;
+		update_poke(num);
+	});
+	$('#poke_sub16').click(function () {
+		var num = parseInt($('#poke_value').val()) - 16;
+		update_poke(num);
+	});
+	update_poke(0);
+});
+</script>
+<style type="text/css">
+body {
+	background: gray;
+}
+.marker_outline {
+	width: 200px;
+	height: 200px;
+	border: 50px solid white;
+	background: black;
+	padding: 50px;
+}
+.marker_invalid {
+	background: red;
+}
+.marker_pixel {
+	width: 50px;
+	height: 50px;
+	float: left;
+	background: black;
+}
+.marker_pixel:hover {
+	border: 1px dotted silver;
+	width: 48px;
+	height: 48px;
+}
+.marker_on {
+	background: white;
+}
+</style>
+</head>
+<body>
+<div class="input_panel">
+Pokemon No.:<input type="text" id="poke_value" name="poke_no"><button id="poke_update">update</button> <button id="poke_sub">-</button><button id="poke_add">+</button> <button id="poke_sub16">-16</button><button id="poke_add16">+16</button><br>
+Marker Code:<input type="text" id="marker_value" name="marker_value"><button id="marker_update">update</button> <button id="marker_sub">-</button><button id="marker_add">+</button><br>
+</div>
+<div class="marker_outline"></div>
+</body>
+</html>
