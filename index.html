@@ -1,77 +1,143 @@
-<!DOCTYPE html>
 <html>
 <head>
-  <meta charset='utf-8'>
-
-  <title>niratama/pokedex-3d-ar-maker @ GitHub</title>
-
-  <style type="text/css">
-    body {
-      margin-top: 1.0em;
-      background-color: #286e94;
-      font-family: Helvetica, Arial, FreeSans, san-serif;
-      color: #ffffff;
-    }
-    #container {
-      margin: 0 auto;
-      width: 700px;
-    }
-    h1 { font-size: 3.8em; color: #d7916b; margin-bottom: 3px; }
-    h1 .small { font-size: 0.4em; }
-    h1 a { text-decoration: none }
-    h2 { font-size: 1.5em; color: #d7916b; }
-    h3 { text-align: center; color: #d7916b; }
-    a { color: #d7916b; }
-    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
-    .download { float: right; }
-    pre { background: #000; color: #fff; padding: 15px;}
-    hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
-    .footer { text-align:center; padding-top:30px; font-style: italic; }
-  </style>
+<title></title>
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+	function update_marker (val) {
+		val = (val & 0xffff);
+		$('#marker_value').val(('0000' + val.toString(16).toUpperCase()).substr(-4));
+		for (i = 0; i < 16; i++) {
+			$('.bit' + i).toggleClass('marker_on', (val & (1 << i)) != 0);
+		}				
+		// decode marker
+		var bit = new Array(16);
+		for (i = 0; i < 16; i++) {
+			bit[i] = (val >> i) & 1;
+		}
+		var code2 =                                   (bit[ 5] << 1) | bit[ 1]; 
+		var code1 = (bit[ 7] << 3) | (bit[14] << 2) | (bit[ 2] << 1) | bit[11]; 
+		var code0 = (bit[13] << 3) | (bit[ 3] << 2) | (bit[15] << 1) | bit[12];
+		var code = (code2 << 8) | (code1 << 4) | code0;
+		// check
+		var pbit = new Array(10);
+		for (i = 0; i < 10; i++) {
+			pbit[i] = (code >> i) & 1;
+		}
+		var poke_no = code + 1 - 494;
+		var valid = ((pbit[0] ^ pbit[1] ^ pbit[2] ^ 1) == bit[0])
+		         && ((pbit[3] ^ pbit[4] ^ pbit[5] ^ 1) == bit[4])
+				 && ((pbit[6] ^ pbit[7] ^ pbit[8] ^ 1) == bit[8])
+				 && (bit[5] == bit[10])
+				 && (bit[6] == 0)
+				 && (bit[9] == 1)
+				 && (poke_no >= 0);
+		$('.input_panel').toggleClass('marker_invalid', !valid);
+		if (valid) {
+			$('#poke_value').val(poke_no);
+		}
+	}
+	function flip_marker (bit) {
+		var num = parseInt($('#marker_value').val(), 16);
+		num ^= (1 << bit);
+		update_marker(num);
+	}
+	function update_poke (val) {
+		$('#poke_value').val(val);
+		var poke_no = (val + 494 - 1) & 0x3ff;
+		// encode marker
+		var bit = new Array(10);
+		for (i = 0; i < 10; i++) {
+			bit[i] = (poke_no >> i) & 1;
+		}
+		var code0 = (bit[0] ^ bit[1] ^ bit[2] ^ 1) | (bit[8] << 1) | (bit[5] << 2) | (bit[2] << 3);
+		var code1 = (bit[3] ^ bit[4] ^ bit[5] ^ 1) | (bit[9] << 1) | (0      << 2) | (bit[7] << 3);
+		var code2 = (bit[6] ^ bit[7] ^ bit[8] ^ 1) | (1      << 1) | (bit[9] << 2) | (bit[4] << 3);
+		var code3 = bit[0]                         | (bit[3] << 1) | (bit[6] << 2) | (bit[1] << 3);
+		var code = (code3 << 12) | (code2 << 8) | (code1 << 4) | code0;
+		update_marker(code); 
+	}
+	// setup marker pixels
+	for (var i = 0; i < 16; i++) {
+		px = $('<div class="marker_pixel"></div>');
+		px.addClass('bit' + i);
+		(function (v) {
+			px.click(function () {
+				flip_marker(v);
+			});
+		})(i);
+		$('.marker_outline').append(px);
+	}
+	$('#marker_update').click(function () {
+		var num = parseInt($('#marker_value').val(), 16);
+		update_marker(num);
+	});
+	$('#marker_add').click(function () {
+		var num = parseInt($('#marker_value').val(), 16) + 1;
+		update_marker(num);
+	});
+	$('#marker_sub').click(function () {
+		var num = parseInt($('#marker_value').val(), 16) - 1;
+		update_marker(num);
+	});
+	$('#poke_update').click(function () {
+		var num = parseInt($('#poke_value').val());
+		update_poke(num);
+	});
+	$('#poke_add').click(function () {
+		var num = parseInt($('#poke_value').val()) + 1;
+		update_poke(num);
+	});
+	$('#poke_sub').click(function () {
+		var num = parseInt($('#poke_value').val()) - 1;
+		update_poke(num);
+	});
+	$('#poke_add16').click(function () {
+		var num = parseInt($('#poke_value').val()) + 16;
+		update_poke(num);
+	});
+	$('#poke_sub16').click(function () {
+		var num = parseInt($('#poke_value').val()) - 16;
+		update_poke(num);
+	});
+	update_poke(0);
+});
+</script>
+<style type="text/css">
+body {
+	background: gray;
+}
+.marker_outline {
+	width: 200px;
+	height: 200px;
+	border: 50px solid white;
+	background: black;
+	padding: 50px;
+}
+.marker_invalid {
+	background: red;
+}
+.marker_pixel {
+	width: 50px;
+	height: 50px;
+	float: left;
+	background: black;
+}
+.marker_pixel:hover {
+	border: 1px dotted silver;
+	width: 48px;
+	height: 48px;
+}
+.marker_on {
+	background: white;
+}
+</style>
 </head>
-
 <body>
-  <a href="http://github.com/niratama/pokedex-3d-ar-maker"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
-
-  <div id="container">
-
-    <div class="download">
-      <a href="http://github.com/niratama/pokedex-3d-ar-maker/zipball/master">
-        <img border="0" width="90" src="http://github.com/images/modules/download/zip.png"></a>
-      <a href="http://github.com/niratama/pokedex-3d-ar-maker/tarball/master">
-        <img border="0" width="90" src="http://github.com/images/modules/download/tar.png"></a>
-    </div>
-
-    <h1><a href="http://github.com/niratama/pokedex-3d-ar-maker">pokedex-3d-ar-maker</a>
-      <span class="small">by <a href="http://github.com/niratama">niratama</a></span></h1>
-
-    <div class="description">
-      ポケモン立体図鑑BWのARマーカーを生成するJavascriptです。
-    </div>
-
-    <h2>Authors</h2>
-<p>Kenichi Kobayashi (niratama3@gmail.com)<br/><br/>      </p>
-<h2>Contact</h2>
-<p>Kenichi Kobayashi (dm-github@poi.jp)<br/>      </p>
-
-
-    <h2>Download</h2>
-    <p>
-      You can download this project in either
-      <a href="http://github.com/niratama/pokedex-3d-ar-maker/zipball/master">zip</a> or
-      <a href="http://github.com/niratama/pokedex-3d-ar-maker/tarball/master">tar</a> formats.
-    </p>
-    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
-      by running:
-      <pre>$ git clone git://github.com/niratama/pokedex-3d-ar-maker</pre>
-    </p>
-
-    <div class="footer">
-      get the source code on GitHub : <a href="http://github.com/niratama/pokedex-3d-ar-maker">niratama/pokedex-3d-ar-maker</a>
-    </div>
-
-  </div>
-
-  
+<div class="input_panel">
+Pokemon No.:<input type="text" id="poke_value" name="poke_no"><button id="poke_update">update</button> <button id="poke_sub">-</button><button id="poke_add">+</button> <button id="poke_sub16">-16</button><button id="poke_add16">+16</button><br>
+Marker Code:<input type="text" id="marker_value" name="marker_value"><button id="marker_update">update</button> <button id="marker_sub">-</button><button id="marker_add">+</button><br>
+</div>
+<div class="marker_outline"></div>
 </body>
 </html>
