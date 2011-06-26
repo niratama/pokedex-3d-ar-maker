@@ -100,6 +100,9 @@ $(document).ready(function() {
 		var num = parseInt($('#poke_value').val()) - 16;
 		update_poke(num);
 	});
+	$('#anim3d').click(function () {
+		$('.marker_outline').toggleClass('anim3d');
+	});
 	update_poke(0);
 });
 </script>
@@ -107,12 +110,34 @@ $(document).ready(function() {
 body {
 	background: gray;
 }
+.marker {
+	width: 400px;
+	height: 400px;
+	margin: 0px;
+	padding: 50px;
+	-webkit-perspective: 1000;
+	-webkit-perspective-origin: 50% 0%;
+}
+@-webkit-keyframes rotate_marker {
+	0% {
+		-webkit-transform: rotateY(-20deg) rotateX(90deg) scale3D(0.8, 0.8, 0.8);
+	}
+	50% {
+		-webkit-transform: rotateY(-75deg) rotateX(90deg) scale3D(0.8, 0.8, 0.8);
+	}
+	100% {
+		-webkit-transform: rotateY(-20deg) rotateX(90deg) scale3D(0.8, 0.8, 0.8);
+	}
+}
 .marker_outline {
 	width: 200px;
 	height: 200px;
 	border: 50px solid white;
 	background: black;
 	padding: 50px;
+}
+.anim3d {
+	-webkit-animation: rotate_marker 10s linear infinite;
 }
 .marker_invalid {
 	background: red;
@@ -137,7 +162,10 @@ body {
 <div class="input_panel">
 Pokemon No.:<input type="text" id="poke_value" name="poke_no"><button id="poke_update">update</button> <button id="poke_sub">-</button><button id="poke_add">+</button> <button id="poke_sub16">-16</button><button id="poke_add16">+16</button><br>
 Marker Code:<input type="text" id="marker_value" name="marker_value"><button id="marker_update">update</button> <button id="marker_sub">-</button><button id="marker_add">+</button><br>
+<input type="checkbox" id="anim3d" name="anim3d"> Animation<br>
 </div>
+<div class="marker">
 <div class="marker_outline"></div>
+</div>
 </body>
 </html>
